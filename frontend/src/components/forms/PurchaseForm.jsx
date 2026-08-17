@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import api from "@/lib/api";
 import { todayISO } from "@/lib/format";
 import { useProducts, useInvalidateFinance } from "@/lib/hooks";
+import ReceiptUpload from "@/components/ReceiptUpload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +18,7 @@ export default function PurchaseForm({ accounts, onSuccess }) {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     amount: "", supplier: "", account_id: accounts?.[0]?.id || "", date: todayISO(),
-    status: "PAID", product_id: "", quantity: "", due_date: "", notes: "",
+    status: "PAID", product_id: "", quantity: "", due_date: "", notes: "", attachment_url: null,
   });
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -31,7 +32,7 @@ export default function PurchaseForm({ accounts, onSuccess }) {
         product_id: form.product_id || null, quantity: form.product_id ? Number(form.quantity || 0) : null,
         unit_price: form.product_id && form.quantity ? Number(form.amount) / Number(form.quantity) : null,
         due_date: form.status === "UNPAID" ? form.due_date || null : null,
-        description: form.notes || null,
+        description: form.notes || null, attachment_url: form.attachment_url,
       });
       invalidate();
       toast.success("Pembelian berhasil dicatat!");
@@ -110,6 +111,7 @@ export default function PurchaseForm({ accounts, onSuccess }) {
             <Label>Catatan</Label>
             <Textarea data-testid="purchase-notes-input" value={form.notes} onChange={(e) => set("notes", e.target.value)} className="mt-1.5 rounded-xl" />
           </div>
+          <ReceiptUpload value={form.attachment_url} onChange={(url) => set("attachment_url", url)} />
         </div>
       )}
 

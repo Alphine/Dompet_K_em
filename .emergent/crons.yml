@@ -1,0 +1,17 @@
+crons:
+  - name: kem-weekly-recap
+    description: "Kirim rekap mingguan omzet, laba, dan biaya terbesar setiap Minggu pagi"
+    cron: "0 9 * * 0"
+    timezone: "Asia/Jakarta"
+    endpoint: "{{BASE_URL}}/api/cron/weekly-recap"
+    method: POST
+    # Cron endpoints must ack 2xx immediately; enqueue/background the actual work.
+    enabled: true
+  - name: kem-receivable-reminder
+    description: "Cek piutang yang jatuh tempo/lewat tempo dan kirim reminder harian"
+    cron: "0 8 * * *"
+    timezone: "Asia/Jakarta"
+    endpoint: "{{BASE_URL}}/api/cron/receivable-reminders"
+    method: POST
+    # Cron endpoints must ack 2xx immediately; enqueue/background the actual work.
+    enabled: true

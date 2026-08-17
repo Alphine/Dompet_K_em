@@ -154,7 +154,7 @@ class TestTransactions:
         s1.delete(f"{API}/transactions/{tx['id']}")
 
     def test_unpaid_sale_creates_receivable(self, s1):
-        pre = len(s1.get(f"{API}/receivables").json())
+        pre = len(s1.get(f"{API}/receivables").json()["items"])
         today = date.today().isoformat()
         r = s1.post(f"{API}/transactions", json={
             "type": "SALE", "amount": 77000, "status": "UNPAID",
@@ -162,7 +162,7 @@ class TestTransactions:
         })
         assert r.status_code == 200, r.text
         tx = r.json()
-        post = len(s1.get(f"{API}/receivables").json())
+        post = len(s1.get(f"{API}/receivables").json()["items"])
         assert post == pre + 1
         s1.delete(f"{API}/transactions/{tx['id']}")
 
@@ -244,11 +244,17 @@ class TestTransactions:
 class TestReceivablesPayables:
     def test_list_receivables(self, s1):
         r = s1.get(f"{API}/receivables")
-        assert r.status_code == 200 and isinstance(r.json(), list)
+        assert r.status_code == 200
+        d = r.json()
+        assert "items" in d and isinstance(d["items"], list)
+        assert "total_outstanding" in d and isinstance(d["total_outstanding"], (int, float))
 
     def test_list_payables(self, s1):
         r = s1.get(f"{API}/payables")
-        assert r.status_code == 200 and isinstance(r.json(), list)
+        assert r.status_code == 200
+        d = r.json()
+        assert "items" in d and isinstance(d["items"], list)
+        assert "total_outstanding" in d
 
 
 # ---------------- Products ----------------

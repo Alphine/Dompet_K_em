@@ -65,6 +65,24 @@ the K-eM AI copilot — with strict security (server-side business scoping) and 
   BusinessContext loading race causing false /onboarding redirect, (2) receivables/payables list
   response shape now returns `{items, total_outstanding}` consistently.
 
+## Update — 17 Aug 2026 (Iteration 2: Weekly Recap, Reminders, Photo Receipts, Voice Record)
+- **Weekly Recap**: Cron (Sunday 9am WIB) computes last-7-days omzet/laba/top expense per business
+  (deterministic template, no LLM) and posts it as a notification + a K-eM chat message
+  (`conv_recap_{business_id}`).
+- **Reminder Nudges**: Daily cron (8am WIB) scans receivables due within 2 days or overdue, creates
+  deduped in-app notifications. Notification bell in header (unread badge + popover list + mark-read).
+- **Photo Receipts**: Emergent Object Storage integration — `POST /api/uploads` / `GET /api/files/{id}`,
+  wired into Expense & Purchase forms' "Detail Lanjutan" with camera-capture on mobile.
+- **Voice Quick Record**: "Rekam Suara" button in Record sheet — records via MediaRecorder, transcribes
+  with OpenAI Whisper, extracts a structured Sale/Expense draft via Gemini 3.1 Pro, shows an editable
+  review screen; transaction is only created after explicit user confirmation (AI guardrail honored).
+- **Bug fixed**: BusinessContext onboarding-redirect race (stale render frame before user's business
+  fetch completed) — resolved using React's "adjust state during render" pattern; confirmed by testing
+  agent across 8 repeated direct-landing attempts with zero regressions.
+- Testing: 39/39 backend pytest passing (26 regression + 13 new), frontend flows confirmed via browser
+  automation (notification bell, receipt upload/preview, voice dialog states, cron-triggered
+  notifications).
+
 ## Prioritized Backlog
 - **P0**: Re-verify BusinessContext fix + receivables/payables fix with a follow-up browser test pass.
 - **P1**: Multi-user business membership (business_members collection exists conceptually but only

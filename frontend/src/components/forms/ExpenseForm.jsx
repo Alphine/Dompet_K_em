@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import api from "@/lib/api";
 import { todayISO } from "@/lib/format";
 import { useCategories, useInvalidateFinance } from "@/lib/hooks";
+import ReceiptUpload from "@/components/ReceiptUpload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +18,7 @@ export default function ExpenseForm({ accounts, onSuccess }) {
   const invalidate = useInvalidateFinance();
   const [advanced, setAdvanced] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ amount: "", category_name: "", vendor: "", account_id: accounts?.[0]?.id || "", date: todayISO(), notes: "" });
+  const [form, setForm] = useState({ amount: "", category_name: "", vendor: "", account_id: accounts?.[0]?.id || "", date: todayISO(), notes: "", attachment_url: null });
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const categoryNames = Array.from(new Set([...categories.map((c) => c.name), ...DEFAULT_CATEGORIES]));
@@ -31,7 +32,7 @@ export default function ExpenseForm({ accounts, onSuccess }) {
       await api.post("/transactions", {
         type: "EXPENSE", amount: Number(form.amount), account_id: form.account_id,
         category_name: form.category_name, counterparty: form.vendor || null,
-        date: form.date, status: "PAID", description: form.notes || null,
+        date: form.date, status: "PAID", description: form.notes || null, attachment_url: form.attachment_url,
       });
       invalidate();
       toast.success("Pengeluaran berhasil dicatat!");
@@ -84,6 +85,7 @@ export default function ExpenseForm({ accounts, onSuccess }) {
             <Label>Catatan</Label>
             <Textarea data-testid="expense-notes-input" value={form.notes} onChange={(e) => set("notes", e.target.value)} className="mt-1.5 rounded-xl" />
           </div>
+          <ReceiptUpload value={form.attachment_url} onChange={(url) => set("attachment_url", url)} />
         </div>
       )}
 

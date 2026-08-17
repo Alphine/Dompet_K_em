@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Plus, ShoppingCart, Receipt, Package, HandCoins, Truck, ArrowLeftRight, Wallet } from "lucide-react";
+import { Plus, ShoppingCart, Receipt, Package, HandCoins, Truck, ArrowLeftRight, Wallet, Mic } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useAccounts } from "@/lib/hooks";
+import VoiceRecordModal from "@/components/VoiceRecordModal";
 import SaleForm from "@/components/forms/SaleForm";
 import ExpenseForm from "@/components/forms/ExpenseForm";
 import PurchaseForm from "@/components/forms/PurchaseForm";
@@ -29,6 +30,7 @@ const FORM_MAP = {
 export default function RecordFAB() {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState(null);
+  const [voiceOpen, setVoiceOpen] = useState(false);
   const { data: accounts = [] } = useAccounts();
 
   const close = () => {
@@ -66,25 +68,36 @@ export default function RecordFAB() {
 
           <div className="mt-5 pb-8">
             {!type ? (
-              <div className="grid grid-cols-2 gap-3" data-testid="record-type-grid">
-                {TYPES.map((t) => (
-                  <button
-                    key={t.key}
-                    data-testid={`record-type-${t.key.toLowerCase()}`}
-                    onClick={() => setType(t.key)}
-                    className="flex flex-col items-center gap-2 py-6 rounded-2xl border border-slate-200 hover:border-kem-teal hover:bg-kem-teal/5 transition-colors"
-                  >
-                    <t.icon size={26} className={t.color} />
-                    <span className="text-sm font-medium text-kem-navy">{t.label}</span>
-                  </button>
-                ))}
-              </div>
+              <>
+                <button
+                  data-testid="voice-record-trigger-button"
+                  onClick={() => { close(); setTimeout(() => setVoiceOpen(true), 260); }}
+                  className="w-full flex items-center justify-center gap-2 bg-kem-teal/10 text-kem-teal font-medium rounded-2xl py-3 mb-4 border border-kem-teal/30"
+                >
+                  <Mic size={16} /> Atau rekam dengan suara
+                </button>
+                <div className="grid grid-cols-2 gap-3" data-testid="record-type-grid">
+                  {TYPES.map((t) => (
+                    <button
+                      key={t.key}
+                      data-testid={`record-type-${t.key.toLowerCase()}`}
+                      onClick={() => setType(t.key)}
+                      className="flex flex-col items-center gap-2 py-6 rounded-2xl border border-slate-200 hover:border-kem-teal hover:bg-kem-teal/5 transition-colors"
+                    >
+                      <t.icon size={26} className={t.color} />
+                      <span className="text-sm font-medium text-kem-navy">{t.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
             ) : (
               <ActiveForm accounts={accounts} onSuccess={close} />
             )}
           </div>
         </SheetContent>
       </Sheet>
+
+      <VoiceRecordModal open={voiceOpen} onOpenChange={setVoiceOpen} />
     </>
   );
 }

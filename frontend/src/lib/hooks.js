@@ -29,6 +29,10 @@ export function useDashboardAlerts() {
   return useQuery({ queryKey: ["dashboard-alerts"], queryFn: async () => (await api.get("/dashboard/alerts")).data });
 }
 
+export function useNotifications() {
+  return useQuery({ queryKey: ["notifications"], queryFn: async () => (await api.get("/notifications")).data, refetchInterval: 60000 });
+}
+
 export function useTransactions(params = {}) {
   return useQuery({
     queryKey: ["transactions", params],
@@ -40,6 +44,7 @@ const FINANCE_KEYS = [
   "dashboard-summary", "dashboard-alerts", "transactions", "accounts",
   "receivables", "payables", "products", "reports-pl", "reports-cashflow",
   "reports-sales", "reports-expenses", "reports-receivables", "reports-payables",
+  "notifications",
 ];
 
 export function useInvalidateFinance() {

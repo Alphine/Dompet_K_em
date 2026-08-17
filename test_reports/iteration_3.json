@@ -1,0 +1,22 @@
+{
+  "summary": "Targeted retest of the /dashboard direct-landing redirect race in BusinessContext.jsx. Ran 5 fresh-context direct navigations to /dashboard + one hard reload + direct landings on /receivables and /transactions using the seeded session cookie (test_session_screenshot_tok). In all 8 attempts the app rendered the AppShell without ever transitioning through /onboarding, and dashboard-page testid was consistently present. Sanity checks on receivables (11 items), payables (5 items), and notification bell (3 seeded notifications) all still work.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "BusinessContext.jsx correctly implements React's 'adjust state during render' pattern (setLastUserId + setLoading(true) + setBusiness(null) inline when currentUserId !== lastUserId). This causes an immediate re-render with loading=true before commit, so AppShell never observes the stale {loading:false, business:null} frame for a newly-resolved user. Fix is sound and confirmed by repeated attempts (5x direct /dashboard + hard reload + /receivables + /transactions). Race condition is resolved."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not tested (frontend-only retest)", "frontend": "100% (8/8 direct-landing attempts + sanity checks passed)"},
+  "test_credentials": "session_token=test_session_screenshot_tok, user_id=test-user-screenshot, business_id=biz_6920d0adc7",
+  "seed_data_creation": "None - used existing seeded session/user/business/data.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "The BusinessContext redirect race fix (iteration_2 -> iteration_3) is confirmed resolved. If any regression surfaces around auth-gated route landings, re-run the same 5x fresh-context /dashboard direct-landing pattern. All prior functionality (receivables count 11, payables count 5, notification bell 3 items) confirmed intact.",
+  "rca of the issue": "Previous iteration_2 bug: AppShell briefly saw {loading:false, business:null} for a newly-authenticated user because BusinessContext reset loading only inside a useEffect (fires post-commit), causing one intermediate render frame that triggered Navigate to /onboarding. Fix (verified this iteration): reset loading=true and business=null synchronously in the render body when currentUserId !== lastUserId (tracked via useState). React re-renders immediately with loading=true before commit, so AppShell's guard `if (loading) return <Loader/>` catches the transition and never observes the stale null-business state. Confirmed with 5 repeated fresh-context /dashboard direct landings + hard reload + /receivables + /transactions with zero redirects to /onboarding."
+}

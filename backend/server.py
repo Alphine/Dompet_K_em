@@ -11,8 +11,10 @@ load_dotenv(ROOT_DIR / '.env')
 from routers import (
     auth_routes, business_routes, account_routes, transaction_routes,
     dashboard_routes, product_routes, receivable_routes, payable_routes,
-    report_routes, assistant_routes, category_routes,
+    report_routes, assistant_routes, category_routes, upload_routes,
+    voice_routes, notification_routes, cron_routes,
 )
+import storage
 
 app = FastAPI(title="Dompet K-eM API")
 
@@ -27,6 +29,10 @@ app.include_router(payable_routes.router)
 app.include_router(report_routes.router)
 app.include_router(assistant_routes.router)
 app.include_router(category_routes.router)
+app.include_router(upload_routes.router)
+app.include_router(voice_routes.router)
+app.include_router(notification_routes.router)
+app.include_router(cron_routes.router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -38,6 +44,15 @@ app.add_middleware(
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+
+@app.on_event("startup")
+async def on_startup():
+    try:
+        storage.init_storage()
+        logger.info("Object storage initialized")
+    except Exception as e:
+        logger.error(f"Storage init failed: {e}")
 
 
 @app.get("/api")

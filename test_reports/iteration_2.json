@@ -1,0 +1,43 @@
+{
+  "summary": "Iteration 2 testing (Weekly Recap cron, Reminder Nudges + Notification bell, Photo Receipts, Voice Quick Record) plus full iteration 1 regression. Backend: 39/39 pytest pass (26 iteration 1 regression + 13 new iteration 2 tests covering cron auth, weekly recap notification generation, receivable reminder notification for backdated overdue receivable, notifications list/mark-read/read-all, photo upload+download round-trip, and voice endpoint auth/empty-file validation). Frontend: notification bell + panel + navigation on click works with real seeded notifications (2 unread badge; weekly_recap + receivable_reminder items visible; click navigates to /receivables); receipt upload button uploads a real PNG and renders the thumbnail preview from GET /api/files/{id}; voice dialog opens in idle state with mic button and correctly hides the review form + Simpan Transaksi button (guardrail: never auto-save without explicit confirm); Record sheet shows voice trigger + 7-type grid; Receivables page shows 11 items and Payables shows 5 items (iteration 1 shape-fix confirmed working). HOWEVER the iteration 1 CRITICAL onboarding-redirect race is NOT actually fixed — reproducing 100%: going directly to /dashboard with a valid session cookie still redirects to /onboarding despite the setLoading(true) that was added to BusinessContext.refresh(). Root cause is different than main agent's diagnosis (see rca).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "BusinessContext / AppShell", "issue": "CRITICAL REGRESSION: Landing on /dashboard (or any protected route) with a valid session cookie still redirects to /onboarding on first load. Iteration 1's fix (adding setLoading(true) inside refresh()) is present but insufficient because refresh() only runs from useEffect AFTER render — so on the render where AuthContext.user just transitioned null→truthy, BusinessProvider still has {loading:false, business:null} from the previous !user branch, and AppShell fires <Navigate to='/onboarding'> before the next refresh() effect runs. Reproduced 2x in this iteration. Workaround still works: land on /onboarding, wait ~3s, then client-side navigate to /dashboard.", "selector": "AppShell -> Navigate('/onboarding')", "priority": "CRITICAL"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/backend/tests/test_iteration2.py",
+    "/app/test_reports/pytest/iteration_2.xml"
+  ],
+  "action_items": [
+    "FIX-1 (CRITICAL, repeat): Properly close the BusinessContext loading race. The current setLoading(true) inside refresh() runs too late (inside useEffect after render). Options: (a) In BusinessProvider, add `useEffect(() => { if (user) setLoading(true); }, [user]);` BEFORE the refresh effect so user->truthy transition synchronously queues loading=true for the very next render; OR (b) derive `loading` state: `const effectiveLoading = authLoading || loading || (user && business === null && !businessErrored);`; OR (c) in AppShell, also gate redirect on AuthContext.loading and don't redirect while user just became truthy and business fetch hasn't started yet. Recommend (b) — most robust. Verify by hitting /dashboard directly with test_session_screenshot_tok cookie — must NOT bounce to /onboarding."
+  ],
+  "critical_code_review_comments": [
+    "BusinessContext race is a state-derivation problem, not a setLoading placement problem — needs derived loading or auth-gating in AppShell",
+    "cron_routes.py correctly uses hmac.compare_digest for secret comparison (constant-time) — good",
+    "upload_routes.py stores under {APP_NAME}/receipts/{business_id}/{file_id}.{ext} and enforces 8MB limit + business scoping on download — solid multi-tenant boundary",
+    "voice_service two-hop (Whisper -> Gemini JSON extract) with a manual editable review before POST /transactions correctly implements the AI 'never silently perform consequential actions' guardrail — verified in UI",
+    "notification_routes uses find({business_id}, {_id:0}) projection correctly (excludes Mongo _id) — matches playbook",
+    "recap_service is deterministic template (no LLM) — good for cost/latency and predictability of weekly digests"
+  ],
+  "updated_files": [
+    "/app/backend/tests/backend_test.py (updated receivables/payables assertions to match new {items,total_outstanding} envelope shape)",
+    "/app/backend/tests/test_iteration2.py (new — 13 tests for cron/notifications/uploads/voice)"
+  ],
+  "success_rate": {"backend": "100% (39/39)", "frontend": "~85% — all iteration 2 features work; iteration 1 onboarding-redirect regression still present"},
+  "test_credentials": "Seeded: session_token=test_session_screenshot_tok, user_id=test-user-screenshot, business_id=biz_6920d0adc7 (Kedai Demo K-eM). WEBHOOK_CRON_SECRET read from /app/backend/.env.",
+  "seed_data_creation": "Test file iteration2.TestReceivableReminders backdates one receivable's due_date to yesterday via mongosh to guarantee a reminder is generated (idempotent — safe to rerun). Weekly recap notification generation is a real DB write that accumulates; multiple test runs create multiple weekly_recap notifications for the demo business (acceptable, list capped at 100 by API).",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend fully green (39/39). Only outstanding issue is the /dashboard->/onboarding redirect race — same bug as iteration 1, iteration 1's fix was insufficient. Reuse /app/backend/tests/backend_test.py + /app/backend/tests/test_iteration2.py (runs in ~5s + weekly_recap wait). To bypass the redirect race for UI testing, land on /onboarding, sleep 3s, then window.history.pushState('/dashboard') + dispatch popstate. All iteration 2 UI wiring is confirmed working end-to-end including a real PNG upload showing preview thumbnail served from /api/files/{id}.",
+  "rca of the issue": {
+    "onboarding_redirect_race_still_present": "AuthContext transitions user from null→object asynchronously after /api/auth/me resolves. When user is null, BusinessProvider.refresh's first branch runs setBusiness(null)+setLoading(false). When user becomes truthy, React re-renders BusinessProvider AND its children (including AppShell) with the new user but still-stale {business:null, loading:false}. AppShell's redirect condition (user && !loading && !business) is now true → <Navigate to='/onboarding'>. THEN the useEffect for refresh() fires and calls setLoading(true), but the route change has already unmounted AppShell so it doesn't matter. The setLoading(true) added inside refresh() cannot fix this because refresh() runs from useEffect which is post-render — the bad render window opens BEFORE any effect runs. Correct fix: make loading derived (loading || (user && business === null)) OR add a synchronous-effect that flips loading true on user change BEFORE the render children see the new user (impossible with useEffect; requires state-in-render pattern or derived state)."
+  }
+}
