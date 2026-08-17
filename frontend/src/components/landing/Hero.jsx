@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, TrendingUp, Wallet } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Mascot } from "@/components/Mascot";
+import ProductDemoPreview from "@/components/landing/ProductDemoPreview";
 
 export default function Hero() {
   const { user } = useAuth();
@@ -41,17 +42,11 @@ export default function Hero() {
         </div>
 
         <div className="relative flex justify-center">
-          <div className="relative">
-            <Mascot expression="celebrating" className="w-56 md:w-72 drop-shadow-2xl" />
-            <div className="absolute -left-6 top-4 bg-white rounded-2xl shadow-xl px-4 py-3 w-40 hidden sm:block" data-testid="hero-mock-cash-card">
-              <p className="text-[10px] text-kem-muted flex items-center gap-1"><Wallet size={10} /> Kas Usaha</p>
-              <p className="font-heading font-bold text-kem-navy text-lg">Rp8.450.000</p>
-            </div>
-            <div className="absolute -right-4 bottom-8 bg-white rounded-2xl shadow-xl px-4 py-3 w-44 hidden sm:block" data-testid="hero-mock-profit-card">
-              <p className="text-[10px] text-kem-muted flex items-center gap-1"><TrendingUp size={10} /> Laba Bersih Bulan Ini</p>
-              <p className="font-heading font-bold text-kem-green text-lg">Rp3.120.000</p>
-            </div>
-          </div>
+          <ProductDemoPreview />
+          <Mascot
+            expression="celebrating"
+            className="w-16 h-16 absolute -bottom-4 -right-2 sm:-right-6 drop-shadow-2xl"
+          />
         </div>
       </div>
     </section>
