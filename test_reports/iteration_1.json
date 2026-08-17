@@ -1,0 +1,47 @@
+{
+  "summary": "First comprehensive testing pass on Dompet K-eM (Indonesian UMKM finance copilot). Backend: 26/26 pytest tests pass (auth, business, dashboard, all 9 transaction types with side-effect verification, receivables, payables, products, reports, cross-business isolation, and AI assistant chat). Frontend: All pages load, all 7 record forms render with correct data-testids, AI assistant returns numerically-grounded Indonesian response citing exact Rp559.000 revenue matching /api/dashboard/summary, mobile viewport shows bottom-nav+FAB. HOWEVER, two significant bugs were found in the frontend integration layer: (1) BusinessContext loading race causing initial /dashboard visit to redirect to /onboarding even when user has an existing business, and (2) Receivables & Payables pages read `data.items` but the backend returns a plain array — so both pages incorrectly show empty state despite 10 open receivables and multiple payables in the seeded demo data.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/receivables and /api/payables", "issue": "Return a raw JSON array. Frontend expects wrapped {items, total_outstanding} object — API/UI contract mismatch. Either backend should wrap the response OR frontend hook/page should adapt. Only Reports uses the aging-shaped variant."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "BusinessContext (src/context/BusinessContext.jsx)", "issue": "CRITICAL: On first load of any authenticated route (e.g. /dashboard), the user is wrongly redirected to /onboarding even when a business already exists. Root cause: refresh() does NOT setLoading(true) at the start when user transitions from null → authenticated, so AppShell renders with loading=false + business=null and Navigate('/onboarding') fires before the fetch completes. Fix: add `setLoading(true)` inside refresh() when user is truthy, before the api.get('/business') call. Reproduced 3x. Workaround used for further testing: navigate to /onboarding first, wait ~3s, then client-side pushState to /dashboard — dashboard then renders perfectly with full KPI data.", "selector": "AppShell -> Navigate to /onboarding", "priority": "CRITICAL"},
+      {"component": "Receivables page (src/pages/Receivables.jsx line 20,27)", "issue": "Reads `data?.items` and `data?.total_outstanding` but the backend GET /api/receivables returns a plain array. Result: page shows 'Total tertagih: Rp0' and empty-state 'Tidak ada piutang yang perlu ditagih' even though 10 open receivables exist and dashboard KPI card correctly shows Piutang Rp332.500. Same file useReceivablesOpen hook just returns res.data.", "selector": "[data-testid='receivables-empty']", "priority": "HIGH"},
+      {"component": "Payables page (src/pages/Payables.jsx line 20,27)", "issue": "Same shape mismatch as Receivables — reads data.items / data.total_outstanding but backend returns array. Payables page will similarly appear empty despite seeded utang.", "selector": "N/A", "priority": "HIGH"},
+      {"component": "DialogContent (multiple record forms)", "issue": "Accessibility warning: 'Missing Description or aria-describedby={undefined} for {DialogContent}' — cosmetic a11y warning, not blocking.", "selector": "DialogContent", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "Session cookie auth from browser (main-agent flagged as 'possibly 401 on /api/auth/me')", "issue": "NOT a bug — verified. Cookie auth works in real browser: GET /api/auth/me returns 200 with cookie session_token. The 401s the main agent saw are the initial pre-cookie /auth/me probe on the login page, which is expected behavior. Backend test test_me_cookie confirms.", "affected_selectors": []},
+      {"flow": "Piutang/Utang lists", "issue": "See Receivables/Payables ui_bugs above — integration between /api/receivables|payables and page components is broken due to response shape mismatch.", "affected_selectors": ["[data-testid='receivables-list']", "[data-testid='payables-list']"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/backend_test.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "FIX-1 (CRITICAL): In /app/frontend/src/context/BusinessContext.jsx refresh(), add `setLoading(true)` immediately before the `try { await api.get('/business') }` when user is truthy, so AppShell keeps rendering the loading spinner during the fetch and does not falsely redirect to /onboarding. Without this fix, ANY returning user hitting the root URL is dumped onto onboarding — this blocks basic app usage.",
+    "FIX-2 (HIGH): Reconcile response shape for /api/receivables and /api/payables. Either (a) update the endpoints to return {items: [...], total_outstanding: sum} OR (b) update Receivables.jsx / Payables.jsx / useReceivablesOpen / usePayablesOpen hooks to consume the raw array and compute total_outstanding on the client. Recommend (a) to match existing /api/reports/receivables aging shape.",
+    "FIX-3 (LOW): Add DialogDescription (or aria-describedby) to Radix DialogContent in record forms to silence the a11y console warning.",
+    "Once FIX-1 and FIX-2 land, main agent can smoke-test by (a) directly opening /dashboard with the seeded cookie and confirming no /onboarding redirect, and (b) opening /receivables and seeing the 10 items list."
+  ],
+  "critical_code_review_comments": [
+    "BusinessContext.refresh() lacks setLoading(true) — classic React async guard mistake, leads to premature route decisions",
+    "API/UI contract mismatch on /api/receivables and /api/payables — response envelope is inconsistent with the aging endpoints; a stronger typed contract (or Pydantic response_model) would have caught this at build time",
+    "Backend CORS uses CORS_ORIGINS='*' with allow_credentials=True elsewhere would break withCredentials cookie flow across origins; not affecting current same-origin ingress but is a footgun if the frontend is ever hosted separately",
+    "Positive: server-side business_id resolution via get_current_business dependency is clean and prevents cross-tenant data leaks — verified with second-user isolation test",
+    "Positive: transaction_service.create_transaction/delete reversal maths verified end-to-end for SALE (paid+cash), SALE (unpaid → creates receivable), EXPENSE (cash reduction), TRANSFER (no profit impact), OWNER_WITHDRAWAL (cash-only, no profit impact) — all match expected"
+  ],
+  "updated_files": ["/app/backend/tests/backend_test.py"],
+  "success_rate": {"backend": "100% (26/26 pytest)", "frontend": "~75% (major flows work but two integration bugs block Receivables/Payables pages and one race blocks default-route landing)"},
+  "test_credentials": "Seeded: session_token=test_session_screenshot_tok, user_id=test-user-screenshot, business_id=biz_6920d0adc7 (Kedai Demo K-eM). Second isolated user is created dynamically inside pytest fixture s2_ctx via mongosh for cross-business tests.",
+  "seed_data_creation": "None persistent — pytest fixture creates ephemeral second test user/business per session for security-isolation tests; individual transaction tests self-clean via DELETE.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend is solid — reuse /app/backend/tests/backend_test.py. Only ~10s runtime. AI chat test costs 1 LLM call. Frontend bugs to re-verify after fixes: (1) go straight to /dashboard with test_session_screenshot_tok cookie — must NOT redirect to /onboarding; (2) go to /receivables — must show 10 items list, not empty state; (3) same for /payables. Note: to avoid the pre-fix routing race during your own manual smoke test, land first on /onboarding, wait ~3s, then client-side navigate to /dashboard.",
+  "rca of the issue": {
+    "onboarding_redirect_race": "AuthContext initially has user=null while /api/auth/me is inflight. BusinessProvider's refresh() sees !user, immediately setLoading(false)+setBusiness(null). When AuthContext resolves user, refresh() runs again but never sets loading back to true, so AppShell renders in the tiny window between (a) BusinessProvider useCallback firing and (b) fetch completion — with loading=false and business=null → <Navigate to='/onboarding'>. The route change unmounts AppShell so the eventual setBusiness has no effect on routing. Reproduction: land on /dashboard with a valid cookie for a user who owns a business. Mitigation: `setLoading(true)` at the top of the user-truthy branch of refresh().",
+    "receivables_payables_empty": "Backend list endpoints return `List[Receivable]` directly, but the corresponding page components destructure `data.items` and `data.total_outstanding`. `undefined?.items` → falsy → empty state renders. Mitigation: wrap backend response OR adapt frontend hook to compute {items, total_outstanding} from the array."
+  }
+}

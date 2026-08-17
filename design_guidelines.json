@@ -1,0 +1,77 @@
+{
+  "typography": {
+    "headings": "Plus Jakarta Sans",
+    "body": "Inter",
+    "strategy": "Soft Utility - Friendly but professional to establish financial trust without feeling overly corporate. Headings must use tight tracking. Body must be highly legible for dense financial data."
+  },
+  "colors": {
+    "archetype": "ORGANIC & EARTHY mixed with SWISS HIGH-CONTRAST",
+    "primary_navy": "#0B2447",
+    "secondary_teal": "#0D9488",
+    "success_green": "#10B981",
+    "accent_gold": "#F59E0B",
+    "background_light": "#F8FAFC",
+    "surface_white": "#FFFFFF",
+    "text_main": "#0F172A",
+    "text_muted": "#64748B",
+    "notes": "CRITICAL: Avoid forbidden color #1B93A4. Used Teal #0D9488 instead for AI/intelligence accents. Navy #0B2447 is the primary trust color. Green #10B981 for positive cash flow. Gold #F59E0B for alerts, warnings, and money accents. Prefer Light theme as default for accessibility among UMKM owners, with dark Navy structural elements for contrast."
+  },
+  "visual_enhancers": {
+    "shadows": "Ambient + direct shadows for floating action button and cards. shadow-[0_8px_30px_rgb(0,0,0,0.04)]",
+    "radii": "rounded-2xl for main cards, full (pill-shaped) for floating action buttons to feel friendly and modern.",
+    "textures": "Subtle noise on the navy hero section to make it feel premium, not flat.",
+    "borders": "1px subtle border (#E2E8F0) on cards to ground them."
+  },
+  "layouts": {
+    "dashboard": "Responsive hybrid. Mobile: Navy hero section with Cash Balance and Profit, sticky bottom navigation. Desktop: Collapsible left sidebar, dense multi-column bento grid for KPI cards.",
+    "action_sheet": "Dominant Floating '+ RECORD' button on mobile (bottom center) that opens a Shadcn Sheet covering 80vh with a grid of transaction types (Sale, Expense, Purchase, etc.). On desktop, use a standard Dialog modal.",
+    "ai_chat": "Chat interface with structured responses (direct answer -> data/evidence -> explanation -> recommendation). Use distinctive message bubbles for K-eM with teal accents.",
+    "spacing": "Generous spacing. p-6 for main cards, gap-4 for dense metrics. Use Tailwind spacing scale."
+  },
+  "components": {
+    "navigation": "Sticky bottom nav for mobile (Home, Record, K-eM, Reports, More). Fixed header on all screens with Simple/Advanced toggle.",
+    "cards": "Flat white background, 1px subtle border, no shadow by default, subtle lift on hover.",
+    "buttons": "Pill-shaped (rounded-full) for primary actions. The '+ RECORD' must be massive and highly visible.",
+    "alerts": "Use muted backgrounds (e.g., bg-amber-50) with strong left-border accents to draw attention without clutter.",
+    "shadcn_customizations": "Customize Sheet component for the Record action. Customize Tabs for Simple/Advanced mode. Use Sonner for toasts."
+  },
+  "motion": {
+    "transitions": "transition-transform 0.2s ease, opacity 0.2s ease",
+    "interactions": "Hover states on all cards (translate-y-[-2px] with increased shadow). Tap/press states on mobile (scale-95).",
+    "stagger": "List items (transactions, alerts) should animate in with staggered delay using framer-motion."
+  },
+  "media": {
+    "mascot": "Since local assets in /tmp/mascot/extracted may be missing, mock the 'K-eM' mascot using lucide-react 'Bot' icon combined with emotion states (Smile, AlertTriangle, Zap, Frown) or generate a simple CSS/SVG wallet-robot shape.",
+    "image_urls": [
+      {
+        "url": "https://images.unsplash.com/photo-1582607285869-08536f2fcb96?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODh8MHwxfHNlYXJjaHwxfHxpbmRvbmVzaWFuJTIwd2FydW5nJTIwc2hvcCUyMG93bmVyfGVufDB8fHx8MTc4NjkzMzQyNnww&ixlib=rb-4.1.0&q=85",
+        "category": "onboarding_background",
+        "description": "Indonesian warung owner to establish immediate empathy and connection during onboarding or empty states."
+      }
+    ]
+  },
+  "accessibility": {
+    "contrast": "Ensure text meets APCA standards. Navy background with White text is high contrast. Teal/Gold accents must be legible against their backgrounds.",
+    "testing": "All interactive elements MUST have data-testid attributes (e.g., data-testid='record-button').",
+    "motion": "Respect prefers-reduced-motion for animations."
+  },
+  "instructions_to_main_agent": [
+    "Use pure HTML/Tailwind for the main Dashboard layouts to allow asymmetrical/creative placement.",
+    "Use Shadcn for interactive logic (Sheet for '+ RECORD', Tabs for mode toggle, Dialog for alerts).",
+    "Build a mobile-first UI but ensure it scales gracefully to desktop (sidebar + grid layout).",
+    "For the AI Chat (K-eM), implement a custom message UI where responses are distinctly structured in 4 parts: Direct Answer, Data Evidence, Explanation, Recommendation.",
+    "Integrate a 'Continue with Google' button as the sole auth mechanism (emergent login flow).",
+    "Do not use generic 'Inter' for headings. Import and use 'Plus Jakarta Sans'.",
+    "For icons, install and use lucide-react (default) or @phosphor-icons/react. Do not use emojis."
+  ],
+  "UNIVERSAL GUIDELINES FOR MAIN AGENT": [
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Every interaction needs micro-animations - hover states, transitions, entrance animations. Static = dead.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "NEVER use AI assistant Emoji characters like 🤖🧠💭💡🔮🎯 etc for icons. Use proper SVG icons.",
+    "Use pre-existing components from src/components/ui when applicable.",
+    "You MUST NOT apply universal transition (e.g., transition: all). Add transitions for specific interactive elements.",
+    "Use 'sonner' for toasts.",
+    "DO NOT center align the app container text (no .App { text-align: center }). Maintain human natural reading flow."
+  ]
+}
