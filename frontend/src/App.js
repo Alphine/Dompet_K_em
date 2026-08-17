@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 import "@/App.css";
 import { AuthProvider } from "@/context/AuthContext";
@@ -7,6 +7,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "@/pages/Login";
 import AuthCallback from "@/pages/AuthCallback";
 import Onboarding from "@/pages/Onboarding";
+import Landing from "@/pages/Landing";
 import AppShell from "@/components/layout/AppShell";
 
 function AppRoutes() {
@@ -19,6 +20,7 @@ function AppRoutes() {
 
   return (
     <Routes>
+      <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route
         path="/onboarding"
@@ -36,7 +38,6 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 }
